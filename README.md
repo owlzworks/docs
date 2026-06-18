@@ -21,6 +21,17 @@ Layout: **`<project>/`** per app, then per concern.
 | Privacy (en / ko) | https://owlzworks.github.io/docs/offlens/legal/privacy_en.html · `…/privacy_ko.html` |
 | Terms (en / ko) | https://owlzworks.github.io/docs/offlens/legal/terms_en.html · `…/terms_ko.html` |
 
+## fortune (운세연구소 · Fortune Lab)
+
+| document | URL |
+|---|---|
+| Version manifest | https://owlzworks.github.io/docs/fortune/version.json |
+| Privacy (en / ko) | https://owlzworks.github.io/docs/fortune/legal/privacy_en.html · `…/privacy_ko.html` |
+| Terms (en / ko) | https://owlzworks.github.io/docs/fortune/legal/terms_en.html · `…/terms_ko.html` |
+
+Legal HTML generated from `tools/{gen_legal.py,legal_content.json}` in the
+`owlzworks/fortune` repo — edit there, regenerate, copy `dist/` into `fortune/legal/`.
+
 ### version.json schema
 
 | field | type | meaning |
