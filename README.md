@@ -32,6 +32,17 @@ Layout: **`<project>/`** per app, then per concern.
 Legal HTML generated from `tools/{gen_legal.py,legal_content.json}` in the
 `owlzworks/fortune` repo — edit there, regenerate, copy `dist/` into `fortune/legal/`.
 
+## cleaner (CleanGuard · 클린가드)
+
+| document | URL |
+|---|---|
+| Version manifest | https://owlzworks.github.io/docs/cleaner/version.json |
+| Privacy (en / ko) | https://owlzworks.github.io/docs/cleaner/legal/privacy_en.html · `…/privacy_ko.html` |
+| Terms (en / ko) | https://owlzworks.github.io/docs/cleaner/legal/terms_en.html · `…/terms_ko.html` |
+
+Legal HTML generated from `tools/{gen_legal.py,legal_content.json}` in the
+`owlzworks/cleaner` repo — edit there, regenerate, copy `dist/` into `cleaner/legal/`.
+
 ### version.json schema
 
 | field | type | meaning |

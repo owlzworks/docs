@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index,follow">
+  <meta name="description" content="Privacy Policy — CleanGuard">
+  <title>Privacy Policy · CleanGuard</title>
+  <style>
+:root { color-scheme: light dark; --brand: #0E7490; --accent: #00C2A8;
+  --bg:#F7F6FB; --fg:#1C1B1F; --muted:#6B6B72; --card:#FFFFFF; --line:#E7E4F0; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#121019; --fg:#E9E5F2; --muted:#A8A2B8; --card:#1B1827; --line:#2A2640; }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin:0; background:var(--bg); color:var(--fg); line-height:1.7;
+  font-family:-apple-system,BlinkMacSystemFont,"Plus Jakarta Sans","Segoe UI",Roboto,
+  "Apple SD Gothic Neo","Noto Sans KR",sans-serif; }
+.wrap { max-width:720px; margin:0 auto; padding:24px 20px 64px; }
+header.brand { display:flex; align-items:center; gap:10px; color:var(--brand); padding:8px 0 4px; }
+header.brand .name { font-size:22px; font-weight:800; letter-spacing:-.3px; color:var(--fg); }
+nav.bar { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 8px; }
+nav.bar a { font-size:13px; text-decoration:none; color:var(--brand);
+  border:1px solid var(--line); border-radius:999px; padding:6px 13px; background:var(--card); }
+nav.bar a.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+nav.bar .spacer { flex:1; }
+h1 { font-size:26px; margin:18px 0 4px; letter-spacing:-.4px; }
+.muted { color:var(--muted); font-size:13px; margin:0 0 18px; }
+.lead { font-size:16px; background:var(--card); border:1px solid var(--line);
+  border-radius:14px; padding:14px 16px; }
+h2 { font-size:18px; margin:30px 0 6px; }
+p, li { font-size:15px; }
+a { color:var(--brand); }
+footer { margin-top:40px; padding-top:18px; border-top:1px solid var(--line);
+  color:var(--muted); font-size:13px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:18px; }
+@media (max-width:520px) { .grid { grid-template-columns:1fr; } }
+.card { display:block; text-decoration:none; color:var(--fg); background:var(--card);
+  border:1px solid var(--line); border-radius:16px; padding:18px; }
+.card:hover { border-color:var(--brand); }
+.card .t { font-weight:700; font-size:16px; }
+.card .s { color:var(--muted); font-size:13px; margin-top:4px; }
+.hero { background:linear-gradient(135deg,#0E7490,#00C2A8); color:#fff;
+  border-radius:20px; padding:26px 22px; margin-top:14px; }
+.hero .name { font-size:26px; font-weight:800; }
+.hero p { margin:6px 0 0; opacity:.95; }
+.pill { display:inline-block; background:rgba(255,255,255,.18); border-radius:999px;
+  padding:3px 10px; font-size:12px; margin-top:12px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="brand"><svg viewBox="0 0 100 100" width="34" height="34" aria-hidden="true" fill="none" stroke="currentColor" stroke-linejoin="round"><rect x="16" y="16" width="56" height="56" rx="22" fill="currentColor" fill-opacity="0.30" stroke="none"/><rect x="30" y="30" width="54" height="54" rx="22" stroke-width="9"/></svg><span class="name">CleanGuard</span></header>
+  <nav class="bar">
+    <a href="index.html">← Home</a>
+    <a class="active" href="privacy_en.html">Privacy Policy</a>
+    <a class="" href="terms_en.html">Terms of Service</a>
+    <span class="spacer"></span>
+    <a class="active" href="privacy_en.html">English</a>
+    <a class="" href="privacy_ko.html">한국어</a>
+  </nav>
+    <h1>Privacy Policy</h1>
+    <p class="muted">Last updated: June 19, 2026</p>
+    <p class="lead">CleanGuard analyzes your device entirely on the device to help you free up storage and memory. It does not upload your files, file names, app data, or analysis results to any server. There is no account and no sign-in.</p>
+    <h2>On-device processing — nothing is uploaded</h2>
+      <p>Scanning your storage and reading app information happen locally on your device; the results are shown only to you. We do not upload your files, file names, or analysis results to any server.</p>
+      <p>A local cleanup history (date, type, and amount freed) is stored on your device so you can review past cleanups. You can clear it any time in the History tab. It is never uploaded.</p>
+      <p>Update check: on launch the app fetches a small static version file over HTTPS to see whether an update is available. This reveals your device&#x27;s IP address to the hosting provider (GitHub), but sends none of your files, app data, or analysis results.</p>
+    <h2>Permissions we request and why</h2>
+      <p>All-files access (MANAGE_EXTERNAL_STORAGE): used only to scan your storage for safely-removable files (caches, temporary files, leftover installers, empty folders). CleanGuard deletes only the items you select.</p>
+      <p>Usage access (PACKAGE_USAGE_STATS): used only to show each app&#x27;s storage size and when it was last used, so you can spot large or rarely-used apps. This information is read locally and is not collected.</p>
+      <p>Uninstall apps (REQUEST_DELETE_PACKAGES): used only to launch Android&#x27;s own uninstall confirmation dialog for an app you chose to remove; the system performs the actual uninstall after you confirm.</p>
+      <p>Stop background processes (KILL_BACKGROUND_PROCESSES): used to free memory when you tap a memory cleanup.</p>
+      <p>These permissions are used solely to provide the cleaner features and never to collect or transmit personal data.</p>
+    <h2>Information stored on your device</h2>
+      <p>App settings (language, appearance) and the local cleanup history are stored on your device using local storage.</p>
+      <p>A minimal, local-only diagnostic log of any in-app errors is kept on the device to help fix problems. It never leaves the device.</p>
+    <h2>Advertising</h2>
+      <p>The app shows ads via Google AdMob. AdMob may collect an advertising identifier and related data to serve and measure ads; see Google&#x27;s policies.</p>
+      <p>Where required (e.g. EEA/UK), a consent form is shown and your choice can be changed later in Settings → Ad privacy settings.</p>
+    <h2>Children &amp; contact</h2>
+      <p>The app is not directed at children and does not knowingly collect personal information from them.</p>
+      <p>For any privacy questions, use the contact below.</p>
+    <footer>
+      <p><b>Contact</b><br>Questions about this policy or the app? Contact <a href="mailto:support@owlzworks.app.">support@owlzworks.app.</a></p>
+      <p>© CleanGuard</p>
+    </footer>
+  </div>
+</body>
+</html>
