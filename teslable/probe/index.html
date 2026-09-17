@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Teslable car probe</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; background: #0b1a32; color: #e8eef7; font: 18px/1.4 -apple-system, Roboto, "Noto Sans KR", sans-serif; padding: 16px; }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .sub { color: #9fb3cc; font-size: 15px; margin-bottom: 12px; }
+  .warn { background: #3a2a00; color: #ffd166; padding: 10px 12px; border-radius: 10px; font-size: 15px; margin-bottom: 12px; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
+  button { font: inherit; font-size: 20px; padding: 16px 20px; border: 0; border-radius: 14px; background: #1f3a63; color: #fff; min-width: 150px; }
+  button.primary { background: #007cfe; }
+  button.on { background: #1e8e3e; }
+  button:disabled { opacity: .5; }
+  .card { background: #13284a; border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
+  .k { color: #9fb3cc; }
+  .ok { color: #7ee787; } .bad { color: #ff7b72; } .mid { color: #ffd166; }
+  video, canvas { width: 100%; max-width: 480px; background: #000; border-radius: 10px; display: block; }
+  #session { font-family: ui-monospace, Menlo, monospace; font-size: 28px; letter-spacing: 3px; }
+  pre { white-space: pre-wrap; font-size: 13px; color: #9fb3cc; max-height: 220px; overflow: auto; }
+</style>
+</head>
+<body>
+<h1>Teslable 차량 브라우저 검사</h1>
+<div class="sub">세션 <span id="session">------</span> · 결과는 자동으로 기록됩니다</div>
+<div class="card" style="font-family: ui-monospace, Menlo, monospace; font-size: 16px; word-break: break-all"><span class="k">요약(사진용)</span> <span id="summary">…</span></div>
+<div class="warn">주차(P) 상태에서 시작하세요. 주행 중에는 화면을 보지 말고, 동승자가 있을 때만 "주행 중" 버튼을 눌러 주세요.</div>
+
+<div class="row">
+  <button id="parked" class="on">주차 중</button>
+  <button id="driving">주행 중</button>
+  <button id="rerun" class="primary">측정 다시 하기</button>
+</div>
+
+<div class="card">
+  <div><span class="k">브라우저</span> <span id="ua">…</span></div>
+  <div><span class="k">화면</span> <span id="screen">…</span></div>
+  <div><span class="k">서버 전송</span> <span id="net">…</span></div>
+</div>
+
+<div class="card">
+  <div><span class="k">1. 비디오 요소 재생</span> <span id="t1">…</span></div>
+  <video id="v1" muted playsinline autoplay></video>
+</div>
+
+<div class="card">
+  <div><span class="k">2. WebRTC 영상(폰 → 차 통로)</span> <span id="t2">…</span></div>
+  <div class="k" id="t2ice" style="font-size:14px"></div>
+  <video id="v2" muted playsinline autoplay></video>
+</div>
+
+<div class="card">
+  <div><span class="k">3. 캔버스 애니메이션</span> <span id="t3">…</span></div>
+  <canvas id="c3" width="480" height="120"></canvas>
+</div>
+
+<div class="card">
+  <div><span class="k">4. 전체화면 · 화면 유지</span> <span id="t4">…</span></div>
+  <div class="row"><button id="fs">전체화면 시도</button></div>
+</div>
+
+<div class="card">
+  <div><span class="k">5. 소리</span> <span id="t5">…</span></div>
+  <div class="row">
+    <button id="tone" class="primary">3초 소리 재생</button>
+    <button id="heard">차 스피커에서 들림</button>
+    <button id="notheard">안 들림</button>
+    <button id="ducked">라디오가 줄어듦</button>
+    <button id="stopped">라디오가 끊김</button>
+  </div>
+</div>
+
+<div class="card">
+  <div><span class="k">6. 페이지 생존(주행 중 정지 여부)</span> <span id="t6">…</span></div>
+</div>
+
+<div class="card"><pre id="log"></pre></div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const session = (localStorage.getItem('probe.session') || Math.random().toString(36).slice(2, 8).toUpperCase());
+  localStorage.setItem('probe.session', session);
+  $('session').textContent = session;
+  let state = 'parked';
+  const logEl = $('log');
+  const log = (m) => { logEl.textContent = new Date().toISOString().slice(11, 19) + ' ' + m + '\n' + logEl.textContent; };
+  const set = (id, text, cls) => { const el = $(id); el.textContent = text; el.className = cls || ''; };
+
+  // Hosted copy (GitHub Pages): findings go to Supabase's Data API (insert-only table, publishable
+  // key is public by design) or to any endpoint given as ?post=https://... ; a summary line is also
+  // kept on screen so a photo of the screen carries the result when neither is reachable.
+  const SUPABASE_URL = 'https://vebatiksovlqcwkapyfh.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_30IrJEIZ4tjrJPzqruC_eQ__LYujPNv';
+  const postTo = new URLSearchParams(location.search).get('post') || localStorage.getItem('probe.post') || '';
+  if (postTo) localStorage.setItem('probe.post', postTo);
+  const summary = {};
+  function renderSummary() {
+    const parts = Object.entries(summary).map(([k, v]) => k + ':' + v);
+    $('summary').textContent = session + ' | ' + state + ' | ' + parts.join(' ');
+  }
+  async function send(event, data) {
+    const body = { session, event, state, at: new Date().toISOString(), data };
+    if (event === 'env') summary.ua = (data.ua.match(/Chrome\/(\d+)/) || [])[1] || '?';
+    if (event === 't1_video') summary.t1 = data.frames4s;
+    if (event === 't2_webrtc') summary.t2 = (data.stats && data.stats.framesDecoded || 0) + (data.mdns ? 'm' : '') + (data.hostV4 ? 'h' : '');
+    if (event === 't3_canvas') summary.t3 = data.fps;
+    if (event === 't4_fullscreen') summary.t4 = data.entered ? 'y' : 'n';
+    if (event === 't5_audio_user') summary.t5 = data.answer;
+    if (event === 't6_gap') summary.t6 = (summary.t6 || 0) + 1;
+    renderSummary();
+    try {
+      let r;
+      if (postTo) {
+        r = await fetch(postTo, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+      } else {
+        r = await fetch(SUPABASE_URL + '/rest/v1/mirror_probes', { method: 'POST',
+          headers: { 'content-type': 'application/json', apikey: SUPABASE_KEY, authorization: 'Bearer ' + SUPABASE_KEY, prefer: 'return=minimal' },
+          body: JSON.stringify({ session, ua: navigator.userAgent, payload: body }) });
+      }
+      set('net', r.ok ? '정상' : 'HTTP ' + r.status + ' (화면 요약을 사진으로)', r.ok ? 'ok' : 'mid');
+    } catch (e) { set('net', '실패 ' + e.message + ' (화면 요약을 사진으로)', 'mid'); }
+  }
+
+  // ---- environment
+  const env = {
+    ua: navigator.userAgent, lang: navigator.language, screen: [screen.width, screen.height], viewport: [innerWidth, innerHeight],
+    dpr: devicePixelRatio, touch: navigator.maxTouchPoints, online: navigator.onLine,
+    conn: navigator.connection ? { type: navigator.connection.effectiveType, down: navigator.connection.downlink } : null,
+    fullscreenEnabled: !!document.fullscreenEnabled, webrtc: 'RTCPeerConnection' in window, mediaSource: 'MediaSource' in window,
+    webcodecs: 'VideoDecoder' in window, wakeLock: 'wakeLock' in navigator, rvfc: 'requestVideoFrameCallback' in HTMLVideoElement.prototype,
+  };
+  $('ua').textContent = env.ua;
+  $('screen').textContent = `${env.screen.join('×')} 화면, ${env.viewport.join('×')} 뷰포트, DPR ${env.dpr}, 터치 ${env.touch}`;
+  send('env', env);
+
+  // ---- helpers
+  function paintStream(fps) {
+    const c = document.createElement('canvas'); c.width = 320; c.height = 180;
+    const g = c.getContext('2d'); let n = 0;
+    const timer = setInterval(() => {
+      n++; g.fillStyle = `hsl(${(n * 7) % 360} 70% 40%)`; g.fillRect(0, 0, 320, 180);
+      g.fillStyle = '#fff'; g.font = '48px sans-serif'; g.fillText(String(n), 20, 110);
+    }, 1000 / fps);
+    return { stream: c.captureStream(fps), stop: () => clearInterval(timer) };
+  }
+  const decodedFrames = (v) => (v.getVideoPlaybackQuality ? v.getVideoPlaybackQuality().totalVideoFrames : (v.webkitDecodedFrameCount || 0));
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+  // ---- 1. <video> with a local MediaStream
+  async function t1() {
+    set('t1', '측정 중…', 'mid');
+    const v = $('v1'); const src = paintStream(15); v.srcObject = src.stream;
+    let playErr = null;
+    try { await v.play(); } catch (e) { playErr = e.name + ': ' + e.message; }
+    const f0 = decodedFrames(v); await wait(4000); const f1 = decodedFrames(v);
+    src.stop();
+    const r = { playErr, frames4s: f1 - f0, paused: v.paused, readyState: v.readyState, w: v.videoWidth, h: v.videoHeight };
+    set('t1', r.frames4s > 20 ? `재생됨 (${r.frames4s} 프레임/4초)` : `문제 (${r.frames4s} 프레임/4초${playErr ? ', ' + playErr : ''})`, r.frames4s > 20 ? 'ok' : 'bad');
+    send('t1_video', r);
+  }
+
+  // ---- 2. WebRTC loopback: sender pc1 → receiver pc2 → <video>
+  async function t2() {
+    set('t2', '측정 중…', 'mid'); $('t2ice').textContent = '';
+    if (!env.webrtc) { set('t2', 'WebRTC 없음', 'bad'); send('t2_webrtc', { supported: false }); return; }
+    const src = paintStream(15);
+    const pc1 = new RTCPeerConnection(), pc2 = new RTCPeerConnection();
+    const cands = [];
+    const note = (who) => (e) => { if (e.candidate) { const c = e.candidate; cands.push({ who, type: c.type, proto: c.protocol, mdns: /\.local$/.test(c.address || ''), addr: (c.address || '').replace(/\d+\.\d+$/, 'x.x') }); } };
+    pc1.onicecandidate = (e) => { note('pc1')(e); if (e.candidate) pc2.addIceCandidate(e.candidate).catch(() => {}); };
+    pc2.onicecandidate = (e) => { note('pc2')(e); if (e.candidate) pc1.addIceCandidate(e.candidate).catch(() => {}); };
+    const v = $('v2');
+    pc2.ontrack = (e) => { v.srcObject = e.streams[0]; v.play().catch(() => {}); };
+    src.stream.getTracks().forEach((t) => pc1.addTrack(t, src.stream));
+    const t0 = performance.now();
+    try {
+      const offer = await pc1.createOffer(); await pc1.setLocalDescription(offer); await pc2.setRemoteDescription(offer);
+      const answer = await pc2.createAnswer(); await pc2.setLocalDescription(answer); await pc1.setRemoteDescription(answer);
+    } catch (e) { set('t2', '협상 실패 ' + e.message, 'bad'); send('t2_webrtc', { error: String(e) }); src.stop(); return; }
+    await wait(6000);
+    let stats = {};
+    try {
+      (await pc2.getStats()).forEach((s) => {
+        if (s.type === 'inbound-rtp' && s.kind === 'video') stats = { framesDecoded: s.framesDecoded, framesDropped: s.framesDropped, bytes: s.bytesReceived, w: s.frameWidth, h: s.frameHeight, fps: s.framesPerSecond };
+        if (s.type === 'codec' && s.mimeType && s.mimeType.startsWith('video/')) stats.codec = s.mimeType;
+      });
+    } catch {}
+    const r = { connection: pc2.connectionState, ice: pc2.iceConnectionState, setupMs: Math.round(performance.now() - t0), stats, candidates: cands.slice(0, 12), mdns: cands.some((c) => c.mdns), hostV4: cands.some((c) => c.type === 'host' && !c.mdns) };
+    src.stop(); pc1.close(); pc2.close();
+    const good = (stats.framesDecoded || 0) > 30;
+    set('t2', good ? `재생됨 (${stats.framesDecoded} 프레임/6초, ${stats.codec || '?'})` : `문제 (${r.ice}, ${stats.framesDecoded || 0} 프레임)`, good ? 'ok' : 'bad');
+    $('t2ice').textContent = `ICE 후보: ${cands.length}개 · mDNS(.local) ${r.mdns ? '있음' : '없음'} · 로컬 IPv4 host ${r.hostV4 ? '있음' : '없음'}`;
+    send('t2_webrtc', r);
+  }
+
+  // ---- 3. canvas rAF fps (JS throttling while driving?)
+  async function t3() {
+    set('t3', '측정 중…', 'mid');
+    const c = $('c3'), g = c.getContext('2d'); let frames = 0, x = 0; const t0 = performance.now();
+    await new Promise((done) => {
+      const step = (t) => { frames++; x = (x + 4) % 480; g.fillStyle = '#000'; g.fillRect(0, 0, 480, 120); g.fillStyle = '#007cfe'; g.fillRect(x, 20, 60, 80); if (t - t0 < 3000) requestAnimationFrame(step); else done(); };
+      requestAnimationFrame(step);
+    });
+    const fps = Math.round(frames / 3);
+    set('t3', `${fps} fps`, fps >= 25 ? 'ok' : fps >= 10 ? 'mid' : 'bad');
+    send('t3_canvas', { fps });
+  }
+
+  // ---- 4. fullscreen + wake
+  $('fs').onclick = async () => {
+    let r = { enabled: env.fullscreenEnabled };
+    try { await document.documentElement.requestFullscreen(); r.entered = !!document.fullscreenElement; } catch (e) { r.error = e.name + ': ' + e.message; }
+    set('t4', r.entered ? '전체화면 됨' : '전체화면 안 됨 ' + (r.error || ''), r.entered ? 'ok' : 'mid');
+    send('t4_fullscreen', r);
+  };
+  set('t4', env.fullscreenEnabled ? 'API 있음 (버튼으로 시도)' : 'API 없음', env.fullscreenEnabled ? 'mid' : 'bad');
+
+  // ---- 5. audio
+  $('tone').onclick = async () => {
+    let r = {};
+    try {
+      const ac = new (window.AudioContext || window.webkitAudioContext)();
+      await ac.resume();
+      const o = ac.createOscillator(); const gn = ac.createGain(); gn.gain.value = 0.3; o.frequency.value = 660; o.connect(gn).connect(ac.destination);
+      o.start(); await wait(3000); o.stop(); r = { state: ac.state, sampleRate: ac.sampleRate, ok: true };
+    } catch (e) { r = { error: e.name + ': ' + e.message }; }
+    set('t5', r.ok ? '재생함 → 들렸는지 눌러 주세요' : '재생 실패 ' + r.error, r.ok ? 'mid' : 'bad');
+    send('t5_audio_play', r);
+  };
+  for (const id of ['heard', 'notheard', 'ducked', 'stopped']) $(id).onclick = () => { set('t5', $(id).textContent, id === 'notheard' || id === 'stopped' ? 'bad' : 'ok'); send('t5_audio_user', { answer: id }); };
+
+  // ---- 6. liveness: heartbeat gaps + visibility events
+  let last = performance.now(), gaps = 0, maxGap = 0;
+  setInterval(() => { const now = performance.now(); const gap = now - last - 1000; if (gap > 2000) { gaps++; maxGap = Math.max(maxGap, gap); send('t6_gap', { gapMs: Math.round(gap) }); } last = now; set('t6', `살아 있음 · 멈춤 ${gaps}회, 최대 ${Math.round(maxGap / 1000)}초`, gaps ? 'mid' : 'ok'); }, 1000);
+  for (const ev of ['visibilitychange', 'pagehide', 'pageshow', 'freeze', 'resume']) document.addEventListener(ev, () => { log(ev + ' ' + document.visibilityState); send('t6_event', { ev, visibility: document.visibilityState }); });
+  window.addEventListener('resize', () => send('t6_event', { ev: 'resize', viewport: [innerWidth, innerHeight] }));
+
+  // ---- state buttons
+  $('parked').onclick = () => { state = 'parked'; $('parked').className = 'on'; $('driving').className = ''; send('state', { state }); };
+  $('driving').onclick = () => { state = 'driving'; $('driving').className = 'on'; $('parked').className = ''; send('state', { state }); };
+  async function runAll() { $('rerun').disabled = true; await t1(); await t2(); await t3(); $('rerun').disabled = false; }
+  $('rerun').onclick = runAll;
+  runAll();
+})();
+</script>
+</body>
+</html>
