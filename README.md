@@ -43,6 +43,16 @@ Legal HTML generated from `tools/{gen_legal.py,legal_content.json}` in the
 Legal HTML generated from `tools/{gen_legal.py,legal_content.json}` in the
 `owlzworks/cleaner` repo — edit there, regenerate, copy `dist/` into `cleaner/legal/`.
 
+## samguk-merge (합체삼국 · Samguk Merge)
+
+| document | URL |
+|---|---|
+| Privacy (en / ko) | https://owlzworks.github.io/docs/samguk-merge/legal/privacy_en.html · `…/privacy_ko.html` |
+| Terms (en / ko) | https://owlzworks.github.io/docs/samguk-merge/legal/terms_en.html · `…/terms_ko.html` |
+
+Legal HTML generated from `legal/legal_content.json` with `scripts/gen-legal.py` in the
+`owlzworks/samguk-merge` repo — edit there, regenerate, copy `build/legal/dist/` into `samguk-merge/legal/`.
+
 ### version.json schema
 
 | field | type | meaning |
