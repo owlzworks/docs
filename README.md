@@ -66,3 +66,16 @@ Bumping `version.json` takes effect on the next app launch (GitHub Pages CDN ~10
 the app treats an unreachable file as up-to-date. The legal HTML is generated from
 `packages/client/tools/{gen_legal.py,legal_content.json}` in the app repo — edit there,
 regenerate, and copy the `dist/` output into `offlens/legal/`.
+
+## teslable
+
+| document | URL |
+|---|---|
+| Privacy (en / ko) | https://owlzworks.github.io/docs/teslable/legal/privacy_en.html · `…/privacy_ko.html` |
+| Terms (en / ko) | https://owlzworks.github.io/docs/teslable/legal/terms_en.html · `…/terms_ko.html` |
+| Location terms (en / ko) | https://owlzworks.github.io/docs/teslable/legal/location_en.html · `…/location_ko.html` |
+| In-car browser probe | https://owlzworks.github.io/docs/teslable/probe/ |
+
+Legal HTML generated from the site content (`apps/site/src/content`) in the
+`owlzworks/teslable` repo: `node_modules/.bin/tsx apps/site/scripts/gen-legal.ts <out>`, then copy
+`<out>/*` into `teslable/legal/`.
